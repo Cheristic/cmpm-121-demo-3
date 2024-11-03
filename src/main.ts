@@ -41,7 +41,7 @@ leaflet
 
 // Add a marker to represent the player
 const playerMarker = leaflet.marker(OAKES_CLASSROOM);
-playerMarker.bindTooltip("That's you!");
+playerMarker.bindPopup("You are here. Hello here.");
 playerMarker.addTo(map);
 
 // Display the player's points
@@ -73,17 +73,13 @@ function spawnCache(i: number, j: number) {
     popupDiv.innerHTML = `This is Cache (${j}, ${i}) <br>
     <div> It has value <span id="value">${pointValue}</span></div>`;
 
-    // const cacheName = document.createElement('span');
-    // cacheName.innerHTML = `Cache (${i}, ${j})`
-    // cacheName.setAttribute('style', "text-align: left; position:absolute;")
-    // popupDiv.append(cacheName);
-
     const collectButton = document.createElement("button");
     collectButton.id = "collect";
     collectButton.innerHTML = "Collect";
 
     // Clicking the button decrements the cache's value and increments the player's points
     collectButton.addEventListener("click", () => {
+      if (pointValue <= 0) return;
       pointValue--;
       popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = pointValue
         .toString();
