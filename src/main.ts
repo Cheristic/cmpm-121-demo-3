@@ -13,6 +13,8 @@ import luck from "./luck.ts";
 
 import { Board } from "./board.ts";
 
+import { Inventory } from "./inventory.ts";
+
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
@@ -49,15 +51,15 @@ playerMarker.bindPopup("You are here. Hello here.");
 playerMarker.addTo(map);
 
 // Display the player's points
-let playerPoints = 0;
-const statusPanel = document.querySelector<HTMLDivElement>("#statusPanel")!; // element `statusPanel` is defined in index.html
-statusPanel.innerHTML = "No points yet...";
+const inventory = new Inventory();
 
 // Add caches to the map by cell numbers
 function spawnCache(i: number, j: number) {
   // Convert cell numbers into lat/lng bounds
-  const point = board.addCell(i, j)!;
-  const bounds = board.getCellBounds(point);
+  const coinCount = Math.floor(luck([i, j, "initialValue"].toString()) * 100);
+
+  const cache = board.addCache(i, j, coinCount);
+  const bounds = board.getCellBounds(cache.cell);
 
   // Add a rectangle to the map to represent the cache
   const rect = leaflet.rectangle(bounds);
@@ -65,14 +67,12 @@ function spawnCache(i: number, j: number) {
 
   // Handle interactions with the cache
   rect.bindPopup(() => {
-    // Each cache has a random point value, mutable by the player
-    let pointValue = Math.floor(luck([i, j, "initialValue"].toString()) * 100);
-
-    // The popup offers a description and button
     const popupDiv = document.createElement("div");
     popupDiv.style.textAlign = "center";
     popupDiv.innerHTML = `This is Cache (${j}, ${i}) <br>
-    <div> It has value <span id="value">${pointValue}</span></div>`;
+      <div><span id="coins"></span></div>
+    `;
+    cache.linkPanel(popupDiv.querySelector<HTMLSpanElement>("#coins")!);
 
     const collectButton = document.createElement("button");
     collectButton.id = "collect";
@@ -80,12 +80,7 @@ function spawnCache(i: number, j: number) {
 
     // Clicking the button decrements the cache's value and increments the player's points
     collectButton.addEventListener("click", () => {
-      if (pointValue <= 0) return;
-      pointValue--;
-      popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = pointValue
-        .toString();
-      playerPoints++;
-      statusPanel.innerHTML = `${playerPoints} points accumulated`;
+      inventory.deposit(cache.withdraw());
     });
     popupDiv.append(collectButton);
 
@@ -95,12 +90,7 @@ function spawnCache(i: number, j: number) {
 
     // Clicking the button decrements the cache's value and increments the player's points
     depositButton.addEventListener("click", () => {
-      if (playerPoints <= 0) return;
-      pointValue++;
-      popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = pointValue
-        .toString();
-      playerPoints--;
-      statusPanel.innerHTML = `${playerPoints} points accumulated`;
+      cache.deposit(inventory.withdraw());
     });
     popupDiv.append(depositButton);
 
@@ -108,15 +98,15 @@ function spawnCache(i: number, j: number) {
   });
 }
 
-// Look around the player's neighborhood for caches to spawn
+// Look around the player's neighborhood for caches to spawn IN WORLD COORDS
 for (
-  let i = -NEIGHBORHOOD_SIZE + board.getCellForPoint(START_LOCATION).i;
-  i < NEIGHBORHOOD_SIZE + board.getCellForPoint(START_LOCATION).i;
+  let i = -NEIGHBORHOOD_SIZE + board.pointToCell(START_LOCATION).i;
+  i < NEIGHBORHOOD_SIZE + board.pointToCell(START_LOCATION).i;
   i++
 ) {
   for (
-    let j = -NEIGHBORHOOD_SIZE + board.getCellForPoint(START_LOCATION).j;
-    j < NEIGHBORHOOD_SIZE + board.getCellForPoint(START_LOCATION).j;
+    let j = -NEIGHBORHOOD_SIZE + board.pointToCell(START_LOCATION).j;
+    j < NEIGHBORHOOD_SIZE + board.pointToCell(START_LOCATION).j;
     j++
   ) {
     // If location i,j is lucky enough, spawn a cache!
