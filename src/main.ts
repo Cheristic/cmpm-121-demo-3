@@ -37,9 +37,9 @@ const map = leaflet.map(document.getElementById("map")!, {
   scrollWheelZoom: false,
 });
 
-const rectLayer = leaflet.layerGroup();
-rectLayer.setZIndex(400);
-rectLayer.addTo(map);
+const overlayLayer = leaflet.layerGroup();
+overlayLayer.setZIndex(400);
+overlayLayer.addTo(map);
 
 // Populate the map with a background tile layer
 leaflet
@@ -68,7 +68,7 @@ function spawnCache(i: number, j: number) {
 
   // Add a rectangle to the map to represent the cache
   const rect = leaflet.rectangle(bounds);
-  rect.addTo(rectLayer);
+  rect.addTo(overlayLayer);
 
   // Handle interactions with the cache
   rect.bindPopup(() => {
@@ -104,13 +104,16 @@ function spawnCache(i: number, j: number) {
 }
 
 function movePlayer(i_dir: number, j_dir: number) {
+  overlayLayer.clearLayers();
   currentLocation = board.getCell(
     currentLocation.i + i_dir,
     currentLocation.j + j_dir,
   );
-  map.panTo(board.cellToPoint(currentLocation), {
+  const newPoint = board.cellToPoint(currentLocation);
+  map.panTo(newPoint, {
     animate: true,
   });
+  playerMarker.setLatLng(newPoint);
 
   // Look around the player's neighborhood for caches to spawn IN WORLD COORDS
   for (
@@ -132,4 +135,26 @@ function movePlayer(i_dir: number, j_dir: number) {
   }
 }
 
-movePlayer(0, 0);
+function setUpButtons() {
+  const controlPanelButtons =
+    document.querySelector<HTMLDivElement>("#controlPanel")!.children;
+  controlPanelButtons[1].addEventListener("click", () => {
+    movePlayer(1, 0);
+  });
+  controlPanelButtons[2].addEventListener("click", () => {
+    movePlayer(-1, 0);
+  });
+  controlPanelButtons[3].addEventListener("click", () => {
+    movePlayer(0, -1);
+  });
+  controlPanelButtons[4].addEventListener("click", () => {
+    movePlayer(0, 1);
+  });
+}
+
+function main() {
+  setUpButtons();
+  movePlayer(0, 0);
+}
+
+main();
