@@ -1,3 +1,5 @@
+import "./style.css";
+
 export interface Coin {
   readonly i: number;
   readonly j: number;
@@ -11,7 +13,7 @@ export class Inventory {
   )!;
 
   constructor() {
-    this.inventoryPanel.classList.add("#statusPanel");
+    this.inventoryPanel.classList.add("statusPanel");
     this.inventoryPanel.innerHTML = "No points yet...";
   }
 

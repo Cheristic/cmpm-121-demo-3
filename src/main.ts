@@ -109,6 +109,7 @@ for (
     j < NEIGHBORHOOD_SIZE + board.pointToCell(START_LOCATION).j;
     j++
   ) {
+    board.foundCell(i, j);
     // If location i,j is lucky enough, spawn a cache!
     if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
       spawnCache(i, j);

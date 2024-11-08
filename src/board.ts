@@ -81,8 +81,15 @@ export class Board {
     return this.knownCells.get(key)!;
   }
 
+  foundCell(i: number, j: number) {
+    this.getCanonicalCell({ i: i, j: j });
+  }
+
   addCache(i: number, j: number, coinCount: number): Cache {
-    return new Cache(this.getCanonicalCell({ i: i, j: j }), coinCount);
+    const cell = this.getCanonicalCell({ i: i, j: j });
+    const cache = new Cache(cell, coinCount);
+    this.caches.set(cell, cache);
+    return cache;
   }
 
   pointToCell(point: leaflet.LatLng): Cell {

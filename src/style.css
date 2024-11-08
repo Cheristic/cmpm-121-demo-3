@@ -43,10 +43,14 @@ h1 {
   justify-content: center;
 }
 
-#statusPanel {
+.statusPanel {
   padding: 1rem;
   margin: auto;
+  margin-top: 10px;
+  width: 20%;
   text-align: center;
+  background-color: aliceblue;
+  border-radius: 25px;
 }
 
 #map {
