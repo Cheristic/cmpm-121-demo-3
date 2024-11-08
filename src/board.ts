@@ -81,8 +81,8 @@ export class Board {
     return this.knownCells.get(key)!;
   }
 
-  foundCell(i: number, j: number) {
-    this.getCanonicalCell({ i: i, j: j });
+  getCell(i: number, j: number): Cell {
+    return this.getCanonicalCell({ i: i, j: j });
   }
 
   addCache(i: number, j: number, coinCount: number): Cache {
@@ -97,6 +97,10 @@ export class Board {
       i: Math.floor(point.lat / this.tileWidth),
       j: Math.floor(point.lng / this.tileWidth),
     });
+  }
+
+  cellToPoint(cell: Cell): leaflet.latLng {
+    return leaflet.latLng(cell.i * this.tileWidth, cell.j * this.tileWidth);
   }
 
   getCellBounds(cell: Cell): leaflet.LatLngBounds {

@@ -25,6 +25,7 @@ const board = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 
 // Location of our classroom (as identified on Google Maps)
 const START_LOCATION = leaflet.latLng(36.98949379578401, -122.06277128548504);
+let currentLocation = board.pointToCell(START_LOCATION);
 
 // Create the map (element with id "map" is defined in index.html)
 const map = leaflet.map(document.getElementById("map")!, {
@@ -35,6 +36,10 @@ const map = leaflet.map(document.getElementById("map")!, {
   zoomControl: false,
   scrollWheelZoom: false,
 });
+
+const rectLayer = leaflet.layerGroup();
+rectLayer.setZIndex(400);
+rectLayer.addTo(map);
 
 // Populate the map with a background tile layer
 leaflet
@@ -63,7 +68,7 @@ function spawnCache(i: number, j: number) {
 
   // Add a rectangle to the map to represent the cache
   const rect = leaflet.rectangle(bounds);
-  rect.addTo(map);
+  rect.addTo(rectLayer);
 
   // Handle interactions with the cache
   rect.bindPopup(() => {
@@ -98,21 +103,33 @@ function spawnCache(i: number, j: number) {
   });
 }
 
-// Look around the player's neighborhood for caches to spawn IN WORLD COORDS
-for (
-  let i = -NEIGHBORHOOD_SIZE + board.pointToCell(START_LOCATION).i;
-  i < NEIGHBORHOOD_SIZE + board.pointToCell(START_LOCATION).i;
-  i++
-) {
+function movePlayer(i_dir: number, j_dir: number) {
+  currentLocation = board.getCell(
+    currentLocation.i + i_dir,
+    currentLocation.j + j_dir,
+  );
+  map.panTo(board.cellToPoint(currentLocation), {
+    animate: true,
+  });
+
+  // Look around the player's neighborhood for caches to spawn IN WORLD COORDS
   for (
-    let j = -NEIGHBORHOOD_SIZE + board.pointToCell(START_LOCATION).j;
-    j < NEIGHBORHOOD_SIZE + board.pointToCell(START_LOCATION).j;
-    j++
+    let i = -NEIGHBORHOOD_SIZE + currentLocation.i;
+    i < NEIGHBORHOOD_SIZE + currentLocation.i;
+    i++
   ) {
-    board.foundCell(i, j);
-    // If location i,j is lucky enough, spawn a cache!
-    if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
-      spawnCache(i, j);
+    for (
+      let j = -NEIGHBORHOOD_SIZE + currentLocation.j;
+      j < NEIGHBORHOOD_SIZE + currentLocation.j;
+      j++
+    ) {
+      board.getCell(i, j);
+      // If location i,j is lucky enough, spawn a cache!
+      if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
+        spawnCache(i, j);
+      }
     }
   }
 }
+
+movePlayer(0, 0);
