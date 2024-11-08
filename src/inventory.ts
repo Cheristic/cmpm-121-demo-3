@@ -40,7 +40,7 @@ export class Inventory {
 
   getTopCoinText(): string | null {
     if (this.coins.length == 0) return null;
-    const coin = this.coins[0];
+    const coin = this.coins[this.coins.length - 1];
     return `Top coin: ${coin?.i}:${coin?.j}#${coin?.serial}`;
   }
 }

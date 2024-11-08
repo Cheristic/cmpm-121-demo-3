@@ -10,7 +10,7 @@ export class Cache {
   constructor(cell: Cell, coinCount: number) {
     this.cell = cell;
     this.coins = [];
-    for (let serial = 0; cell.i < coinCount; serial++) {
+    for (let serial = 0; serial < coinCount; serial++) {
       this.coins.push({ i: cell.i, j: cell.j, serial: serial });
     }
   }
@@ -37,10 +37,13 @@ export class Cache {
 
   private setPanelText() {
     if (this.coins.length == 0) this.panel!.innerHTML = "No coins yet...";
-    else {this.panel!.innerHTML = `
+    else {
+      const topCoin = this.coins[this.coins.length - 1];
+      this.panel!.innerHTML = `
     Cache holds ${this.coins.length} coins. <br>
-    Top coin: ${this.coins[0].i}:${this.coins[0].j}#${this.coins[0].serial}
-    `;}
+    Top coin: ${topCoin.i}:${topCoin.j}#${topCoin.serial}
+    `;
+    }
   }
 
   toMemento() {
