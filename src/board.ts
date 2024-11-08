@@ -3,16 +3,12 @@ import leaflet from "leaflet";
 import { Coin } from "./inventory.ts";
 
 export class Cache {
-  readonly cell: Cell;
-  readonly coins: Coin[];
+  cell: Cell | undefined;
+  coins: Coin[];
   panel: HTMLSpanElement | null = null;
 
-  constructor(cell: Cell, coinCount: number) {
-    this.cell = cell;
+  constructor() {
     this.coins = [];
-    for (let serial = 0; serial < coinCount; serial++) {
-      this.coins.push({ i: cell.i, j: cell.j, serial: serial });
-    }
   }
 
   linkPanel(panel: HTMLSpanElement) {
@@ -47,10 +43,38 @@ export class Cache {
   }
 
   toMemento() {
-    return this.coins.toString();
+    if (this.coins.length == 0) return "";
+    let s: string = `${this.coins[0].i}:${this.coins[0].j}#${
+      this.coins[0].serial
+    }`;
+    for (let i = 1; i < this.coins.length; i++) {
+      s += `,${this.coins[i].i}:${this.coins[i].j}#${this.coins[i].serial}`;
+    }
+
+    return s;
   }
-  fromMemento() {
-    //this.coins = Array.from()
+
+  discoverNewCell(cell: Cell, coinCount: number) {
+    this.cell = cell;
+    for (let serial = 0; serial < coinCount; serial++) {
+      this.coins.push({ i: cell.i, j: cell.j, serial: serial });
+    }
+  }
+
+  fromMemento(cell: Cell, memento: string) {
+    this.cell = cell;
+    this.coins.length = 0;
+    if (memento == "") return;
+
+    const coinMementos = memento.split(",");
+    coinMementos.forEach((coin) => {
+      const coinInfo = coin.split(/[:#]/);
+      this.coins.push({
+        i: parseInt(coinInfo[0]),
+        j: parseInt(coinInfo[1]),
+        serial: parseInt(coinInfo[2]),
+      });
+    });
   }
 }
 
@@ -64,14 +88,17 @@ export class Board {
   readonly tileVisibilityRadius: number;
 
   private readonly knownCells: Map<string, Cell>;
-  private readonly caches: Map<Cell, Cache>;
+  private readonly mementos: Map<Cell, string>;
+  private readonly cachePool: Cache[];
+  nextEmptyCacheIndex: number = 0;
 
   constructor(tileWidth: number, tileVisibilityRadius: number) {
     this.tileWidth = tileWidth;
     this.tileVisibilityRadius = tileVisibilityRadius;
 
     this.knownCells = new Map();
-    this.caches = new Map();
+    this.mementos = new Map();
+    this.cachePool = [];
   }
 
   private getCanonicalCell(cell: Cell): Cell {
@@ -85,10 +112,28 @@ export class Board {
     return this.getCanonicalCell({ i: i, j: j });
   }
 
+  regenerateCaches() {
+    this.cachePool.forEach((cache) => {
+      this.mementos.set(cache.cell!, cache.toMemento());
+    });
+    this.nextEmptyCacheIndex = 0;
+  }
+
   addCache(i: number, j: number, coinCount: number): Cache {
     const cell = this.getCanonicalCell({ i: i, j: j });
-    const cache = new Cache(cell, coinCount);
-    this.caches.set(cell, cache);
+
+    let cache;
+    if (this.nextEmptyCacheIndex == this.cachePool.length) {
+      cache = new Cache();
+      this.cachePool.push(cache);
+    } else {
+      cache = this.cachePool[this.nextEmptyCacheIndex];
+    }
+
+    if (this.mementos.has(cell)) {
+      cache.fromMemento(cell, this.mementos.get(cell)!);
+    } else cache.discoverNewCell(cell, coinCount);
+    this.nextEmptyCacheIndex++;
     return cache;
   }
 

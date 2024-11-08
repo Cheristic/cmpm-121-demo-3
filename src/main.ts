@@ -64,7 +64,7 @@ function spawnCache(i: number, j: number) {
   const coinCount = Math.floor(luck([i, j, "initialValue"].toString()) * 100);
 
   const cache = board.addCache(i, j, coinCount);
-  const bounds = board.getCellBounds(cache.cell);
+  const bounds = board.getCellBounds(cache.cell!);
 
   // Add a rectangle to the map to represent the cache
   const rect = leaflet.rectangle(bounds);
@@ -115,6 +115,7 @@ function movePlayer(i_dir: number, j_dir: number) {
   });
   playerMarker.setLatLng(newPoint);
 
+  board.regenerateCaches();
   // Look around the player's neighborhood for caches to spawn IN WORLD COORDS
   for (
     let i = -NEIGHBORHOOD_SIZE + currentLocation.i;
