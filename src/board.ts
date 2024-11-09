@@ -97,7 +97,20 @@ export class Board {
     this.tileVisibilityRadius = tileVisibilityRadius;
 
     this.knownCells = new Map();
-    this.mementos = new Map();
+    const mementoFromData = localStorage.getItem("memento");
+    if (mementoFromData) {
+      const parsedMemento = JSON.parse(mementoFromData);
+      this.mementos = new Map(
+        parsedMemento.map((
+          obj: [cell: Cell, coins: string],
+        ) => [this.getCanonicalCell(obj[0]), obj[1]]),
+      );
+    } else {
+      this.mementos = new Map();
+    }
+    console.log(
+      this.mementos.get(this.getCanonicalCell({ i: 369901, j: -1220623 })),
+    );
     this.cachePool = [];
   }
 
@@ -113,10 +126,12 @@ export class Board {
   }
 
   regenerateCaches() {
-    this.cachePool.forEach((cache) => {
-      this.mementos.set(cache.cell!, cache.toMemento());
-    });
     this.nextEmptyCacheIndex = 0;
+  }
+
+  updateCacheMementoState(cache: Cache) {
+    this.mementos.set(cache.cell!, cache.toMemento());
+    localStorage.setItem("memento", JSON.stringify(Array.from(this.mementos)));
   }
 
   addCache(i: number, j: number, coinCount: number): Cache {
@@ -131,6 +146,7 @@ export class Board {
     }
 
     if (this.mementos.has(cell)) {
+      if (cell.i == 369901) console.log(this.mementos.get(cell)!);
       cache.fromMemento(cell, this.mementos.get(cell)!);
     } else cache.discoverNewCell(cell, coinCount);
     this.nextEmptyCacheIndex++;

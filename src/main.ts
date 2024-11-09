@@ -96,6 +96,7 @@ function spawnCache(i: number, j: number) {
     // Clicking the button decrements the cache's value and increments the player's points
     collectButton.addEventListener("click", () => {
       inventory.deposit(cache.withdraw());
+      board.updateCacheMementoState(cache);
     });
     popupDiv.append(collectButton);
 
@@ -106,6 +107,7 @@ function spawnCache(i: number, j: number) {
     // Clicking the button decrements the cache's value and increments the player's points
     depositButton.addEventListener("click", () => {
       cache.deposit(inventory.withdraw());
+      board.updateCacheMementoState(cache);
     });
     popupDiv.append(depositButton);
 
