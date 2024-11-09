@@ -25,6 +25,9 @@ a:hover {
 }
 
 body {
+  background-image: url("../src/24313.jpg");
+  background-size: 100% 100%;
+
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
@@ -38,9 +41,13 @@ h1 {
 #controlPanel {
   padding: 1rem;
   margin: auto;
+  width: 40%;
   display: flex;
+  gap: 2px;
   flex-wrap: wrap;
   justify-content: center;
+  background-color: aliceblue;
+  border-radius: 25px;
 }
 
 .statusPanel {
@@ -57,20 +64,19 @@ h1 {
   width: 90%;
   height: 80vh;
   margin: auto;
-  border: 3px solid gray;
+  border: 6px solid #6d5d24;
 }
 
 button {
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 3px solid #1a1a1a;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #f7f6f5;
   cursor: pointer;
   transition: border-color 0.25s;
-  color: white;
 }
 
 button:hover {

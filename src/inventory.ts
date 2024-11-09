@@ -14,7 +14,7 @@ export class Inventory {
 
   constructor() {
     this.inventoryPanel.classList.add("statusPanel");
-    this.inventoryPanel.innerHTML = "No points yet...";
+    this.inventoryPanel.innerHTML = "No coins yet...";
   }
 
   withdraw(): Coin | undefined {
@@ -22,7 +22,7 @@ export class Inventory {
 
     const coin = this.coins.pop();
     if (this.coins.length == 0) {
-      this.inventoryPanel.innerHTML = "No points yet...";
+      this.inventoryPanel.innerHTML = "No coins yet...";
     } else {this.inventoryPanel.innerHTML = `
         Inventory holds ${this.coins.length} coins. <br>
         Top coin: ${coin?.i}:${coin?.j}#${coin?.serial}
@@ -48,7 +48,6 @@ export class Inventory {
 
   resetInventory() {
     this.coins.length = 0;
-    this.inventoryPanel.classList.add("statusPanel");
-    this.inventoryPanel.innerHTML = "No points yet...";
+    this.inventoryPanel.innerHTML = "No coins yet...";
   }
 }
