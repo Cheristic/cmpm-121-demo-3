@@ -154,4 +154,9 @@ export class Board {
       [(cell.i + 1) * this.tileWidth, (cell.j + 1) * this.tileWidth],
     ]);
   }
+
+  resetBoard() {
+    this.knownCells.clear();
+    this.mementos.clear();
+  }
 }

@@ -1,5 +1,5 @@
 // @deno-types="npm:@types/leaflet@^1.9.14"
-import leaflet from "leaflet";
+import leaflet, { latLng } from "leaflet";
 
 // Style sheets
 import "leaflet/dist/leaflet.css";
@@ -24,12 +24,22 @@ const CACHE_SPAWN_PROBABILITY = 0.1;
 const board = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 
 // Location of our classroom (as identified on Google Maps)
-const START_LOCATION = leaflet.latLng(36.98949379578401, -122.06277128548504);
-let currentLocation = board.pointToCell(START_LOCATION);
+const DEFAULT_LOCATION = leaflet.latLng(36.98949379578401, -122.06277128548504);
+let startLocation = DEFAULT_LOCATION;
+const loadedLastLocation = localStorage.getItem("currentLocation");
+if (loadedLastLocation) {
+  const loadedCoords = loadedLastLocation.split(",");
+  startLocation = leaflet.latLng(
+    parseFloat(loadedCoords[0]),
+    parseFloat(loadedCoords[1]),
+  );
+}
+
+let currentLocation = board.pointToCell(startLocation);
 
 // Create the map (element with id "map" is defined in index.html)
 const map = leaflet.map(document.getElementById("map")!, {
-  center: START_LOCATION,
+  center: startLocation,
   zoom: GAMEPLAY_ZOOM_LEVEL,
   minZoom: GAMEPLAY_ZOOM_LEVEL,
   maxZoom: GAMEPLAY_ZOOM_LEVEL,
@@ -51,7 +61,7 @@ leaflet
   .addTo(map);
 
 // Add a marker to represent the player
-const playerMarker = leaflet.marker(START_LOCATION);
+const playerMarker = leaflet.marker(startLocation);
 playerMarker.bindPopup("You are here. Hello here.");
 playerMarker.addTo(map);
 
@@ -103,6 +113,8 @@ function spawnCache(i: number, j: number) {
   });
 }
 
+const playerLocationHistory: leaflet.LatLng[] = [];
+
 function movePlayer(i_dir: number, j_dir: number) {
   overlayLayer.clearLayers();
   currentLocation = board.getCell(
@@ -110,10 +122,14 @@ function movePlayer(i_dir: number, j_dir: number) {
     currentLocation.j + j_dir,
   );
   const newPoint = board.cellToPoint(currentLocation);
+  localStorage.setItem("currentLocation", `${newPoint.lat},${newPoint.lng}`);
   map.panTo(newPoint, {
     animate: true,
   });
+  playerLocationHistory.push(newPoint);
   playerMarker.setLatLng(newPoint);
+
+  leaflet.polyline(playerLocationHistory, { color: "red" }).addTo(overlayLayer);
 
   board.regenerateCaches();
   // Look around the player's neighborhood for caches to spawn IN WORLD COORDS
@@ -127,7 +143,6 @@ function movePlayer(i_dir: number, j_dir: number) {
       j < NEIGHBORHOOD_SIZE + currentLocation.j;
       j++
     ) {
-      board.getCell(i, j);
       // If location i,j is lucky enough, spawn a cache!
       if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
         spawnCache(i, j);
@@ -139,6 +154,15 @@ function movePlayer(i_dir: number, j_dir: number) {
 function setUpButtons() {
   const controlPanelButtons =
     document.querySelector<HTMLDivElement>("#controlPanel")!.children;
+  controlPanelButtons[0].addEventListener("click", () => {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      currentLocation = board.pointToCell(
+        latLng(pos.coords.latitude, pos.coords.longitude),
+      );
+      movePlayer(0, 0);
+    });
+  });
+
   controlPanelButtons[1].addEventListener("click", () => {
     movePlayer(1, 0);
   });
@@ -150,6 +174,17 @@ function setUpButtons() {
   });
   controlPanelButtons[4].addEventListener("click", () => {
     movePlayer(0, 1);
+  });
+
+  controlPanelButtons[5].addEventListener("click", () => {
+    const response: string = prompt("Are you sure? (Y/N)")?.toLowerCase()!;
+    if (response == "y") {
+      playerLocationHistory.length = 0;
+      inventory.resetInventory();
+      board.resetBoard();
+      currentLocation = board.pointToCell(DEFAULT_LOCATION);
+      movePlayer(0, 0);
+    }
   });
 }
 

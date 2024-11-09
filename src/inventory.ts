@@ -45,4 +45,10 @@ export class Inventory {
     const coin = this.coins[this.coins.length - 1];
     return `Top coin: ${coin?.i}:${coin?.j}#${coin?.serial}`;
   }
+
+  resetInventory() {
+    this.coins.length = 0;
+    this.inventoryPanel.classList.add("statusPanel");
+    this.inventoryPanel.innerHTML = "No points yet...";
+  }
 }
