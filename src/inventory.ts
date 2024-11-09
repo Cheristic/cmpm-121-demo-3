@@ -14,19 +14,32 @@ export class Inventory {
 
   constructor() {
     this.inventoryPanel.classList.add("statusPanel");
-    this.inventoryPanel.innerHTML = "No coins yet...";
+    const inventoryData = localStorage.getItem("inventory");
+    if (inventoryData) {
+      this.coins = JSON.parse(inventoryData);
+    }
+    this.updateText();
+  }
+
+  private updateText() {
+    if (this.coins.length == 0) {
+      this.inventoryPanel.innerHTML = "No coins yet...";
+    } else {
+      const coin = this.coins[this.coins.length - 1];
+      this.inventoryPanel.innerHTML = `
+        Inventory holds ${this.coins.length} coins. <br>
+        Top coin: ${coin?.i}:${coin?.j}#${coin?.serial}
+    `;
+    }
   }
 
   withdraw(): Coin | undefined {
     if (this.coins.length == 0) return;
 
     const coin = this.coins.pop();
-    if (this.coins.length == 0) {
-      this.inventoryPanel.innerHTML = "No coins yet...";
-    } else {this.inventoryPanel.innerHTML = `
-        Inventory holds ${this.coins.length} coins. <br>
-        Top coin: ${coin?.i}:${coin?.j}#${coin?.serial}
-        `;}
+    this.updateText();
+
+    localStorage.setItem("inventory", JSON.stringify(this.coins));
     return coin;
   }
 
@@ -34,10 +47,8 @@ export class Inventory {
     if (!coin) return;
 
     this.coins.push(coin);
-    this.inventoryPanel.innerHTML = `
-        Inventory holds ${this.coins.length} coins. <br>
-        Top coin: ${coin?.i}:${coin?.j}#${coin?.serial}
-        `;
+    this.updateText();
+    localStorage.setItem("inventory", JSON.stringify(this.coins));
   }
 
   getTopCoinText(): string | null {

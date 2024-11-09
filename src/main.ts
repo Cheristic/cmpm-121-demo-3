@@ -185,6 +185,7 @@ function setUpButtons() {
       playerLocationHistory.length = 0;
       inventory.resetInventory();
       board.resetBoard();
+      localStorage.clear();
       currentLocation = board.pointToCell(DEFAULT_LOCATION);
       movePlayer(0, 0);
     }
