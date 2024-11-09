@@ -108,9 +108,6 @@ export class Board {
     } else {
       this.mementos = new Map();
     }
-    console.log(
-      this.mementos.get(this.getCanonicalCell({ i: 369901, j: -1220623 })),
-    );
     this.cachePool = [];
   }
 

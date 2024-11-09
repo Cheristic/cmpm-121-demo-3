@@ -115,7 +115,12 @@ function spawnCache(i: number, j: number) {
   });
 }
 
-const playerLocationHistory: leaflet.LatLng[] = [];
+let playerLocationHistory: leaflet.LatLng[] = [];
+const loadPlayerHistory = localStorage.getItem("playerPath");
+if (loadPlayerHistory) {
+  playerLocationHistory = JSON.parse(loadPlayerHistory);
+  leaflet.polyline(playerLocationHistory, { color: "red" }).addTo(overlayLayer);
+}
 
 function movePlayer(i_dir: number, j_dir: number) {
   overlayLayer.clearLayers();
@@ -130,8 +135,6 @@ function movePlayer(i_dir: number, j_dir: number) {
   });
   playerLocationHistory.push(newPoint);
   playerMarker.setLatLng(newPoint);
-
-  leaflet.polyline(playerLocationHistory, { color: "red" }).addTo(overlayLayer);
 
   board.regenerateCaches();
   // Look around the player's neighborhood for caches to spawn IN WORLD COORDS
@@ -151,6 +154,8 @@ function movePlayer(i_dir: number, j_dir: number) {
       }
     }
   }
+  leaflet.polyline(playerLocationHistory, { color: "red" }).addTo(overlayLayer);
+  localStorage.setItem("playerPath", JSON.stringify(playerLocationHistory));
 }
 
 function setUpButtons() {
