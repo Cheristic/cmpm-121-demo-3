@@ -143,7 +143,6 @@ export class Board {
     }
 
     if (this.mementos.has(cell)) {
-      if (cell.i == 369901) console.log(this.mementos.get(cell)!);
       cache.fromMemento(cell, this.mementos.get(cell)!);
     } else cache.discoverNewCell(cell, coinCount);
     this.nextEmptyCacheIndex++;

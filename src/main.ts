@@ -11,7 +11,7 @@ import "./leafletWorkaround.ts";
 // Deterministic random number generator
 import luck from "./luck.ts";
 
-import { Board } from "./board.ts";
+import { Board, Cache } from "./board.ts";
 
 import { Inventory } from "./inventory.ts";
 
@@ -68,23 +68,27 @@ playerMarker.addTo(map);
 // Display the player's points
 const inventory = new Inventory();
 
-// Add caches to the map by cell numbers
-function spawnCache(i: number, j: number) {
-  // Convert cell numbers into lat/lng bounds
+function createCache(i: number, j: number): Cache {
   const coinCount = Math.floor(luck([i, j, "initialValue"].toString()) * 100);
-
   const cache = board.addCache(i, j, coinCount);
-  const bounds = board.getCellBounds(cache.cell!);
+  return cache;
+}
 
-  // Add a rectangle to the map to represent the cache
+function renderCache(cache: Cache): leaflet.Rectangle {
+  const bounds = board.getCellBounds(cache.cell!);
   const rect = leaflet.rectangle(bounds);
   rect.addTo(overlayLayer);
+  return rect;
+}
 
+function bindCachePopup(rect: leaflet.Rectangle, cache: Cache) {
   // Handle interactions with the cache
   rect.bindPopup(() => {
     const popupDiv = document.createElement("div");
     popupDiv.style.textAlign = "center";
-    popupDiv.innerHTML = `This is Cache (${j}, ${i}) <br>
+    popupDiv.innerHTML = `This is Cache (${cache.cell!.j}, ${
+      cache.cell!.j
+    }) <br>
       <div><span id="coins"></span></div>
     `;
     cache.linkPanel(popupDiv.querySelector<HTMLSpanElement>("#coins")!);
@@ -115,6 +119,13 @@ function spawnCache(i: number, j: number) {
   });
 }
 
+// Add caches to the map by cell numbers
+function spawnCache(i: number, j: number) {
+  const cache = createCache(i, j);
+  const bounds = renderCache(cache);
+  bindCachePopup(bounds, cache);
+}
+
 let playerLocationHistory: leaflet.LatLng[] = [];
 const loadPlayerHistory = localStorage.getItem("playerPath");
 if (loadPlayerHistory) {
@@ -122,20 +133,29 @@ if (loadPlayerHistory) {
   leaflet.polyline(playerLocationHistory, { color: "red" }).addTo(overlayLayer);
 }
 
-function movePlayer(i_dir: number, j_dir: number) {
-  overlayLayer.clearLayers();
-  currentLocation = board.getCell(
+function calculateNewLocation(i_dir: number, j_dir: number) {
+  return currentLocation = board.getCell(
     currentLocation.i + i_dir,
     currentLocation.j + j_dir,
   );
-  const newPoint = board.cellToPoint(currentLocation);
-  localStorage.setItem("currentLocation", `${newPoint.lat},${newPoint.lng}`);
-  map.panTo(newPoint, {
-    animate: true,
-  });
-  playerLocationHistory.push(newPoint);
-  playerMarker.setLatLng(newPoint);
+}
 
+function saveNewLocation(newPoint: leaflet.LatLng) {
+  localStorage.setItem("currentLocation", `${newPoint.lat},${newPoint.lng}`);
+  playerLocationHistory.push(newPoint);
+  localStorage.setItem("playerPath", JSON.stringify(playerLocationHistory));
+}
+
+function updatePlayerMarker(newPoint: leaflet.LatLng) {
+  map.panTo(newPoint, { animate: true });
+  playerMarker.setLatLng(newPoint);
+}
+
+function drawPlayerPath() {
+  leaflet.polyline(playerLocationHistory, { color: "red" }).addTo(overlayLayer);
+}
+
+function spawnNeighborhoodCaches() {
   board.regenerateCaches();
   // Look around the player's neighborhood for caches to spawn IN WORLD COORDS
   for (
@@ -154,8 +174,19 @@ function movePlayer(i_dir: number, j_dir: number) {
       }
     }
   }
-  leaflet.polyline(playerLocationHistory, { color: "red" }).addTo(overlayLayer);
-  localStorage.setItem("playerPath", JSON.stringify(playerLocationHistory));
+}
+
+function movePlayer(i_dir: number, j_dir: number) {
+  overlayLayer.clearLayers();
+
+  const currentLocation = calculateNewLocation(i_dir, j_dir);
+  const newPoint = board.cellToPoint(currentLocation);
+
+  saveNewLocation(newPoint);
+  updatePlayerMarker(newPoint);
+
+  spawnNeighborhoodCaches();
+  drawPlayerPath();
 }
 
 function setUpButtons() {
