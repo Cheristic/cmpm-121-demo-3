@@ -11,70 +11,47 @@ export class Cache {
     this.coins = [];
   }
 
-  linkPanel(panel: HTMLSpanElement) {
-    this.panel = panel;
-    this.setPanelText();
-  }
-
   withdraw(): Coin | undefined {
-    if (this.coins.length == 0) return;
-
-    const coin = this.coins.pop();
-    this.setPanelText();
-    return coin;
+    return this.coins.pop();
   }
 
   deposit(coin: Coin | undefined) {
-    if (!coin) return;
-
-    this.coins.push(coin);
-    this.setPanelText();
-  }
-
-  private setPanelText() {
-    if (this.coins.length == 0) this.panel!.innerHTML = "No coins yet...";
-    else {
-      const topCoin = this.coins[this.coins.length - 1];
-      this.panel!.innerHTML = `
-    Cache holds ${this.coins.length} coins. <br>
-    Top coin: ${topCoin.i}:${topCoin.j}#${topCoin.serial}
-    `;
-    }
+    if (coin) this.coins.push(coin);
   }
 
   toMemento() {
-    if (this.coins.length == 0) return "";
-    let s: string = `${this.coins[0].i}:${this.coins[0].j}#${
-      this.coins[0].serial
-    }`;
-    for (let i = 1; i < this.coins.length; i++) {
-      s += `,${this.coins[i].i}:${this.coins[i].j}#${this.coins[i].serial}`;
-    }
-
-    return s;
+    return this.coins
+      .map((coin) => `${coin.i}:${coin.j}#${coin.serial}`)
+      .join(",");
   }
 
-  discoverNewCell(cell: Cell, coinCount: number) {
+  createNewCache(cell: Cell, coinCount: number) {
     this.cell = cell;
     for (let serial = 0; serial < coinCount; serial++) {
       this.coins.push({ i: cell.i, j: cell.j, serial: serial });
     }
   }
 
-  fromMemento(cell: Cell, memento: string) {
+  restoreCacheFromMemento(cell: Cell, memento: string) {
     this.cell = cell;
-    this.coins.length = 0;
-    if (memento == "") return;
-
-    const coinMementos = memento.split(",");
-    coinMementos.forEach((coin) => {
-      const coinInfo = coin.split(/[:#]/);
-      this.coins.push({
-        i: parseInt(coinInfo[0]),
-        j: parseInt(coinInfo[1]),
-        serial: parseInt(coinInfo[2]),
+    this.coins = memento
+      .split(",")
+      .map((coin) => {
+        const [i, j, serial] = coin.split(/[:#]/).map(Number);
+        return { i, j, serial };
       });
-    });
+  }
+}
+
+export class CacheUI {
+  static updatePanelText(cache: Cache, panel: HTMLSpanElement) {
+    if (cache.coins.length == 0) {
+      panel.innerHTML = "No coins yet...";
+    } else {
+      const topCoin = cache.coins[cache.coins.length - 1];
+      panel.innerHTML = `Cache holds ${cache.coins.length} coins. <br>
+          Top coin: ${topCoin.i}:${topCoin.j}#${topCoin.serial}`;
+    }
   }
 }
 
@@ -143,8 +120,9 @@ export class Board {
     }
 
     if (this.mementos.has(cell)) {
-      cache.fromMemento(cell, this.mementos.get(cell)!);
-    } else cache.discoverNewCell(cell, coinCount);
+      cache.restoreCacheFromMemento(cell, this.mementos.get(cell)!);
+    } else cache.createNewCache(cell, coinCount);
+
     this.nextEmptyCacheIndex++;
     return cache;
   }

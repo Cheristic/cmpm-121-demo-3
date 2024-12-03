@@ -11,7 +11,7 @@ import "./leafletWorkaround.ts";
 // Deterministic random number generator
 import luck from "./luck.ts";
 
-import { Board, Cache } from "./board.ts";
+import { Board, Cache, CacheUI } from "./board.ts";
 
 import { Inventory } from "./inventory.ts";
 
@@ -87,31 +87,34 @@ function bindCachePopup(rect: leaflet.Rectangle, cache: Cache) {
     const popupDiv = document.createElement("div");
     popupDiv.style.textAlign = "center";
     popupDiv.innerHTML = `This is Cache (${cache.cell!.j}, ${
-      cache.cell!.j
+      cache.cell!.i
     }) <br>
       <div><span id="coins"></span></div>
     `;
-    cache.linkPanel(popupDiv.querySelector<HTMLSpanElement>("#coins")!);
 
+    const coinsSpan = popupDiv.querySelector<HTMLSpanElement>("#coins")!;
+    console.log(coinsSpan);
+    CacheUI.updatePanelText(cache, coinsSpan);
+
+    // Create a Collect button
     const collectButton = document.createElement("button");
     collectButton.id = "collect";
     collectButton.innerHTML = "Collect";
-
-    // Clicking the button decrements the cache's value and increments the player's points
     collectButton.addEventListener("click", () => {
       inventory.deposit(cache.withdraw());
       board.updateCacheMementoState(cache);
+      CacheUI.updatePanelText(cache, coinsSpan);
     });
     popupDiv.append(collectButton);
 
+    // Create a Deposit button
     const depositButton = document.createElement("button");
     depositButton.id = "deposit";
     depositButton.innerHTML = "Deposit";
-
-    // Clicking the button decrements the cache's value and increments the player's points
     depositButton.addEventListener("click", () => {
       cache.deposit(inventory.withdraw());
       board.updateCacheMementoState(cache);
+      CacheUI.updatePanelText(cache, coinsSpan);
     });
     popupDiv.append(depositButton);
 
