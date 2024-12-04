@@ -8,57 +8,74 @@ export interface Coin {
 
 export class Inventory {
   private coins: Coin[] = [];
+  private persistence: InventoryPersistence = new InventoryPersistence();
+
+  constructor() {
+    this.coins = this.persistence.loadCoins() || [];
+    console.log(this.coins);
+  }
+
+  withdraw(): Coin | undefined {
+    const coin = this.coins.pop();
+    this.persistence.saveCoins(this.coins);
+    return coin;
+  }
+
+  deposit(coin: Coin | undefined) {
+    if (!coin) return;
+    this.coins.push(coin);
+    this.persistence.saveCoins(this.coins);
+  }
+
+  reset() {
+    this.coins = [];
+    this.persistence.saveCoins(this.coins);
+  }
+
+  getCoins(): Coin[] {
+    return [...this.coins];
+  }
+
+  getTopCoin(): Coin | null {
+    return this.coins.length > 0 ? this.coins[this.coins.length - 1] : null;
+  }
+}
+
+export class InventoryUI {
   private inventoryPanel = document.querySelector<HTMLDivElement>(
     "#inventoryPanel",
   )!;
 
   constructor() {
     this.inventoryPanel.classList.add("statusPanel");
-    const inventoryData = localStorage.getItem("inventory");
-    if (inventoryData) {
-      this.coins = JSON.parse(inventoryData);
-    }
-    this.updateText();
   }
 
-  private updateText() {
-    if (this.coins.length == 0) {
+  updatePanel(coins: Coin[]) {
+    if (coins.length == 0) {
       this.inventoryPanel.innerHTML = "No coins yet...";
     } else {
-      const coin = this.coins[this.coins.length - 1];
+      const topCoin = coins[coins.length - 1];
       this.inventoryPanel.innerHTML = `
-        Inventory holds ${this.coins.length} coins. <br>
-        Top coin: ${coin?.i}:${coin?.j}#${coin?.serial}
-    `;
+        Inventory holds ${coins.length} coins. <br>
+        Top coin: ${topCoin?.i}:${topCoin?.j}#${topCoin?.serial}
+      `;
     }
   }
 
-  withdraw(): Coin | undefined {
-    if (this.coins.length == 0) return;
-
-    const coin = this.coins.pop();
-    this.updateText();
-
-    localStorage.setItem("inventory", JSON.stringify(this.coins));
-    return coin;
-  }
-
-  deposit(coin: Coin | undefined) {
-    if (!coin) return;
-
-    this.coins.push(coin);
-    this.updateText();
-    localStorage.setItem("inventory", JSON.stringify(this.coins));
-  }
-
-  getTopCoinText(): string | null {
-    if (this.coins.length == 0) return null;
-    const coin = this.coins[this.coins.length - 1];
-    return `Top coin: ${coin?.i}:${coin?.j}#${coin?.serial}`;
-  }
-
-  resetInventory() {
-    this.coins.length = 0;
+  resetPanel() {
     this.inventoryPanel.innerHTML = "No coins yet...";
+  }
+}
+
+export class InventoryPersistence {
+  private storageKey = "inventory";
+
+  saveCoins(coins: Coin[]) {
+    localStorage.setItem(this.storageKey, JSON.stringify(coins));
+  }
+
+  loadCoins(): Coin[] | null {
+    const inventoryData = localStorage.getItem(this.storageKey);
+    return inventoryData ? JSON.parse(inventoryData) : null;
   }
 }

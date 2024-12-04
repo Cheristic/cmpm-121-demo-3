@@ -13,7 +13,7 @@ import luck from "./luck.ts";
 
 import { Board, Cache, CacheUI } from "./board.ts";
 
-import { Inventory } from "./inventory.ts";
+import { Inventory, InventoryUI } from "./inventory.ts";
 
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
@@ -67,6 +67,8 @@ playerMarker.addTo(map);
 
 // Display the player's points
 const inventory = new Inventory();
+const inventoryUI = new InventoryUI();
+inventoryUI.updatePanel(inventory.getCoins());
 
 function createCache(i: number, j: number): Cache {
   const coinCount = Math.floor(luck([i, j, "initialValue"].toString()) * 100);
@@ -93,7 +95,6 @@ function bindCachePopup(rect: leaflet.Rectangle, cache: Cache) {
     `;
 
     const coinsSpan = popupDiv.querySelector<HTMLSpanElement>("#coins")!;
-    console.log(coinsSpan);
     CacheUI.updatePanelText(cache, coinsSpan);
 
     // Create a Collect button
@@ -101,9 +102,13 @@ function bindCachePopup(rect: leaflet.Rectangle, cache: Cache) {
     collectButton.id = "collect";
     collectButton.innerHTML = "Collect";
     collectButton.addEventListener("click", () => {
-      inventory.deposit(cache.withdraw());
-      board.updateCacheMementoState(cache);
-      CacheUI.updatePanelText(cache, coinsSpan);
+      const withdrawnCoin = cache.withdraw();
+      if (withdrawnCoin) {
+        inventory.deposit(withdrawnCoin);
+        inventoryUI.updatePanel(inventory.getCoins());
+        board.updateCacheMementoState(cache);
+        CacheUI.updatePanelText(cache, coinsSpan);
+      }
     });
     popupDiv.append(collectButton);
 
@@ -112,9 +117,13 @@ function bindCachePopup(rect: leaflet.Rectangle, cache: Cache) {
     depositButton.id = "deposit";
     depositButton.innerHTML = "Deposit";
     depositButton.addEventListener("click", () => {
-      cache.deposit(inventory.withdraw());
-      board.updateCacheMementoState(cache);
-      CacheUI.updatePanelText(cache, coinsSpan);
+      const withdrawnCoin = inventory.withdraw();
+      if (withdrawnCoin) {
+        cache.deposit(withdrawnCoin);
+        inventoryUI.updatePanel(inventory.getCoins());
+        board.updateCacheMementoState(cache);
+        CacheUI.updatePanelText(cache, coinsSpan);
+      }
     });
     popupDiv.append(depositButton);
 
@@ -222,7 +231,8 @@ function setUpButtons() {
     const response: string = prompt("Are you sure? (Y/N)")?.toLowerCase()!;
     if (response == "y") {
       playerLocationHistory.length = 0;
-      inventory.resetInventory();
+      inventory.reset();
+      inventoryUI.resetPanel();
       board.resetBoard();
       localStorage.clear();
       currentLocation = board.pointToCell(DEFAULT_LOCATION);
